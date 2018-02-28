@@ -150,8 +150,47 @@ def test_checksums_manifest_generation():
     assert checksums_manifest_dump == expected_checksums_manifest_dump
 
 
-# get_release_props {{{1
-@pytest.mark.parametrize("taskjson,locale, relprops, expected", ((
+@pytest.mark.parametrize('locale, relprops, expected', ((
+    False, {
+        "platform": "android",
+    }, {
+        "platform": "android-api-16",
+    }
+), (
+    True, {
+        "platform": "macosx64",
+    }, {
+        "platform": "mac",
+    }
+), (
+    False, {
+        "platform": "linux64",
+    }, {
+        "platform": "linux-x86_64",
+    }
+), (
+    False, {
+        "platform": "macosx64",
+    }, {
+        "platform": "mac",
+    }
+), (
+    True, {
+        "platform": "win64",
+    }, {
+        "platform": "win64",
+    }
+)))
+def test_get_release_props_from_payload(context, mocker, locale, relprops, expected):
+    context.task = get_fake_valid_task('task.json')
+    if locale:
+        context.task['payload']['locale'] = 'lang'
+
+    context.task['payload']['releaseProperties'] = relprops
+    assert get_release_props(context) == (expected, None)
+
+
+@pytest.mark.parametrize('taskjson, locale, relprops, expected', ((
     'task.json', False, {
         "platform": "android",
         "stage_platform": "android-api-16"
@@ -190,17 +229,11 @@ def test_checksums_manifest_generation():
         "stage_platform": "win64-devedition"
     }
 )))
-def test_get_release_props(context, mocker, taskjson, locale, relprops, expected):
+# TODO remove the end of this function when method is not supported anymore
+def test_get_release_props_from_balrog_props_file(context, mocker, taskjson, locale, relprops, expected):
     context.task = get_fake_valid_task(taskjson)
     if locale:
         context.task['payload']['locale'] = 'lang'
-
-    context.task['payload']['releaseProperties'] = relprops
-    assert get_release_props(context) == (expected, None)
-
-    # also check balrog_props method works with same data
-    # TODO remove the end of this function when method is not supported anymore
-    del context.task['payload']['releaseProperties']
 
     context.task['payload']['upstreamArtifacts'] = [{
       "locale": "lang",
