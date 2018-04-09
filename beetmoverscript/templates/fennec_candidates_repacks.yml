@@ -7,6 +7,7 @@ metadata:
 s3_bucket_path: pub/mobile/candidates/{{ version }}-candidates/build{{ build_number }}/
 
 mapping:
+{% for locale in locales %}
   {{ locale }}:
     target.apk:
       s3_key: fennec-{{ version }}.{{ locale }}.android-arm.apk
@@ -23,3 +24,4 @@ mapping:
       destinations:
         - {{ platform }}/{{ locale }}/fennec-{{ version }}.{{ locale }}.android-arm.checksums.asc
         - beetmover-checksums/{{ platform }}/{{ locale }}/fennec-{{ version }}.android-arm.checksums.asc
+{% endfor %} # end for locales
