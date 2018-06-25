@@ -13,7 +13,7 @@ from scriptworker.exceptions import TaskVerificationError
 
 from beetmoverscript.constants import (
     HASH_BLOCK_SIZE,
-    RELEASE_ACTIONS, PROMOTION_ACTIONS, PRODUCT_TO_PATH,
+    RELEASE_ACTIONS, PROMOTION_ACTIONS, MAVEN_ACTIONS, PRODUCT_TO_PATH,
     NORMALIZED_FILENAME_PLATFORMS, PARTNER_REPACK_ACTIONS,
 )
 
@@ -81,6 +81,13 @@ def is_partner_action(action):
     return action in PARTNER_REPACK_ACTIONS
 
 
+def is_maven_action(action):
+    """Function to return boolean if we're promoting a release as opposed to a
+    nightly or something else. Does that by checking the action type.
+    """
+    return action in MAVEN_ACTIONS
+
+
 def is_partner_private_task(context):
     """Function to return boolean if we're considering a public partner task.
     Does that by checking the action type and presence of a flag in payload
@@ -110,6 +117,9 @@ def get_product_name(appName, platform):
 def generate_beetmover_template_args(context):
     task = context.task
     release_props = context.release_props
+
+    if is_maven_action(context.action):
+        return _generate_beetmover_template_args_maven(task, release_props)
 
     tmpl_args = {
         # payload['upload_date'] is a timestamp defined by params['pushdate']
@@ -157,6 +167,24 @@ def generate_beetmover_template_args(context):
         tmpl_args["template_key"] = "%s_%s_repacks" % (product_name, tmpl_bucket)
     else:
         tmpl_args["template_key"] = "%s_%s" % (product_name, tmpl_bucket)
+
+    return tmpl_args
+
+
+def _generate_beetmover_template_args_maven(task, release_props):
+    tmpl_args = {
+        'artifact_id': task['payload']['artifact_id'],
+        'branch': release_props['branch'],
+        'buildid': release_props['buildid'],
+        'product': release_props['appName'],
+        'template_key': 'maven',
+        'version': task['payload']['version'],
+    }
+
+    if 'nightly' in tmpl_args['artifact_id']:
+        # Change version number to major.minor.buildId
+        tmpl_args['version'] = tmpl_args['version'].rstrip('a1')
+        tmpl_args['version'] = '{}.{}'.format(tmpl_args['version'], tmpl_args['buildid'])
 
     return tmpl_args
 

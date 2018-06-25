@@ -92,6 +92,9 @@ RESTRICTED_BUCKET_PATHS = {
     'partner': [
         '',  # all legal
     ],
+    'maven': [
+        'maven2/org/mozilla',
+    ]
 }
 
 # actions that imply actual releases, hence the need of `build_number` and
@@ -106,6 +109,10 @@ RELEASE_ACTIONS = (
 
 PARTNER_REPACK_ACTIONS = (
     'push-to-partner',
+)
+
+MAVEN_ACTIONS = (
+    'push-to-maven',
 )
 
 # XXX this is a fairly clunky way of specifying which files to copy from

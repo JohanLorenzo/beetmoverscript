@@ -19,6 +19,7 @@ from beetmoverscript.script import (
     move_partner_beets,
     push_to_partner,
     push_to_releases,
+    push_to_maven,
     put,
     sanity_check_partner_path,
     setup_mimetypes,
@@ -87,6 +88,13 @@ async def test_push_to_releases(context, mocker, candidates_keys,
             await push_to_releases(context)
     else:
         await push_to_releases(context)
+
+
+@pytest.mark.asyncio
+async def test_push_to_maven(context, mocker):
+    mocker.patch('beetmoverscript.script.move_beets', new=noop_async)
+    mocker.patch('beetmoverscript.utils.JINJA_ENV', get_test_jinja_env())
+    await push_to_maven(context)
 
 
 # copy_beets {{{1

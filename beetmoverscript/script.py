@@ -154,6 +154,18 @@ async def push_to_releases(context):
     copy_beets(context, candidates_keys_checksums, releases_keys_checksums)
 
 
+async def push_to_maven(context):
+    """Push artifacts to locations expected by maven clients (like mvn or gradle)"""
+    context.artifacts_to_beetmove = get_upstream_artifacts(context)
+    context.release_props = get_release_props(context)
+    context.checksums = dict()  # Needed by downstream calls
+
+    mapping_manifest = generate_beetmover_manifest(context)
+    validate_bucket_paths(context.bucket, mapping_manifest['s3_bucket_path'])
+
+    await move_beets(context, context.artifacts_to_beetmove, mapping_manifest)
+
+
 # copy_beets {{{1
 def copy_beets(context, from_keys_checksums, to_keys_checksums):
     creds = get_creds(context)
@@ -217,6 +229,7 @@ action_map = {
     # push to candidates is at this point identical to push_to_nightly
     'push-to-candidates': push_to_nightly,
     'push-to-releases': push_to_releases,
+    'push-to-maven': push_to_maven,
 }
 
 
