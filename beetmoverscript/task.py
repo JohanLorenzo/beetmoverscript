@@ -15,6 +15,7 @@ from beetmoverscript.constants import (
     CHECKSUMS_CUSTOM_FILE_NAMING
 )
 from scriptworker.exceptions import ScriptWorkerTaskException
+from scriptworker.artifacts import get_and_check_single_upstream_artifact_full_path
 
 log = logging.getLogger(__name__)
 
@@ -109,22 +110,15 @@ def add_balrog_manifest_to_artifacts(context):
     utils.write_json(abs_file_path, context.balrog_manifest)
 
 
-def get_upstream_artifact(context, taskid, path):
-    abs_path = os.path.abspath(os.path.join(context.config['work_dir'], 'cot', taskid, path))
-    if not os.path.exists(abs_path):
-        raise ScriptWorkerTaskException(
-            "upstream artifact with path: {}, does not exist".format(abs_path)
-        )
-    return abs_path
-
-
 def get_upstream_artifacts(context, preserve_full_paths=False):
     artifacts = {}
     for artifact_dict in context.task['payload']['upstreamArtifacts']:
         locale = artifact_dict['locale']
         artifacts[locale] = artifacts.get(locale, {})
         for path in artifact_dict['paths']:
-            abs_path = get_upstream_artifact(context, artifact_dict['taskId'], path)
+            abs_path = get_and_check_single_upstream_artifact_full_path(
+                context, artifact_dict['taskId'], path
+            )
             if preserve_full_paths:
                 artifacts[locale][path] = abs_path
             else:
