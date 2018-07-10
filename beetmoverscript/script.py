@@ -38,6 +38,7 @@ from beetmoverscript.utils import (
     get_product_name, is_partner_action, is_partner_private_task,
     is_partner_public_task, write_json
 )
+from beetmoverscript.zip import check_and_extract_zip_archives
 
 log = logging.getLogger(__name__)
 
@@ -160,10 +161,14 @@ async def push_to_maven(context):
     context.release_props = get_release_props(context)
     context.checksums = dict()  # Needed by downstream calls
 
-    context.artifacts_to_beetmove = check_and_extract_zip_archives(context.artifacts_to_beetmove)
-
     mapping_manifest = generate_beetmover_manifest(context)
     validate_bucket_paths(context.bucket, mapping_manifest['s3_bucket_path'])
+
+    expected_files = list(mapping_manifest['mapping'].keys())
+
+    context.artifacts_to_beetmove = check_and_extract_zip_archives(
+        context.artifacts_to_beetmove, expected_files, context.config['zip_extract_max_file_size_in_mb']
+    )
 
     await move_beets(context, context.artifacts_to_beetmove, mapping_manifest)
 

@@ -4,37 +4,63 @@ import zipfile
 
 from scriptworker.exceptions import TaskVerificationError
 
+from beetmoverscript.constants import ZIP_MAX_COMPRESSION_RATIO
 
 log = logging.getLogger(__name__)
 
-MAX_COMPRESSION_RATIO = 10
 
-def check_and_extract_zip_archives(artifacts_per_task_id, zip_extract_max_file_size_in_mb):
+def check_and_extract_zip_archives(artifacts_per_task_id, expected_files, zip_extract_max_file_size_in_mb):
+    deflated_artifacts_per_task_id = {}
     for task_id, task_params in artifacts_per_task_id:
-        if task_params['must_extract'] is False:
+        paths_for_task = task_params['paths']
+
+        if task_params['zip_extract'] is False:
+            log.debug('Skipping artifacts marked as not `zipExtract`able: {}'.format(paths_for_task))
+            deflated_artifacts_per_task_id[task_id] = paths_for_task
             continue
 
-        for path in task_params['paths']:
-            log.info('Processing archive "{}" which marked as `zipExtract`able'.format(path))
-            _check_extract_and_delete_zip_archive(zip_path, zip_extract_max_file_size_in_mb)
+        deflated_artifacts_per_task_id[task_id] = _check_and_extract_zip_archives_for_given_task(
+            task_id, paths_for_task, expected_files, zip_extract_max_file_size_in_mb
+        )
+
+    return deflated_artifacts_per_task_id
 
 
-def _check_extract_and_delete_zip_archive(zip_path, zip_extract_max_file_size_in_mb):
+def _check_and_extract_zip_archives_for_given_task(task_id, paths_for_task, expected_files, zip_extract_max_file_size_in_mb):
+    extracted_files = []
+
+    for path in paths_for_task:
+        log.info('Processing archive "{}" which marked as `zipExtract`able'.format(path))
+        extracted_files.append(
+            _check_extract_and_delete_zip_archive(path, expected_files, zip_extract_max_file_size_in_mb)
+        )
+
+    # We make this check at this stage (and not when all files from all tasks got extracted)
+    # because files from different tasks are stored in different folders by scriptworker. Moreover
+    # we tested no relative paths like ".." are not used within the archive.
+    _ensure_no_file_got_overwritten(task_id, extracted_files)
+
+    return extracted_files
+
+
+def _check_extract_and_delete_zip_archive(zip_path, expected_files, zip_extract_max_file_size_in_mb):
     _check_archive_itself(zip_path, zip_extract_max_file_size_in_mb)
 
     with zipfile.ZipFile(zip_path) as zip_file:
         zip_metadata = _fetch_zip_metadata(zip_file)
 
         # we don't close the file descriptor here to avoid the tested file to be swapped by a rogue one
-        _ensure_files_in_archive_have_decent_sizes(zip_path, zip_metadata, zip_extract_max_file_size_in_mb):
-        _ensure_all_files_are_present(zip_path, zip_metadata)
+        _ensure_files_in_archive_have_decent_sizes(zip_path, zip_metadata, zip_extract_max_file_size_in_mb)
+        _ensure_all_expected_files_are_present_in_archive(zip_path, zip_metadata, expected_files)
         log.info('Content of archive "{}" is sane'.format(zip_path))
 
-        _extract_files(zip_file)
+        extracted_files = _extract_and_check_output_files(zip_file, zip_metadata.keys())
 
     # We remove the zip archive because it's not used anymore. We just need the deflated files
     os.remove(zip_path)
-    log.info('Deleted archive "{}"'.format(zip_path, extract_to))
+    log.debug('Deleted archive "{}"'.format(zip_path))
+
+    return extracted_files
 
 
 def _check_archive_itself(zip_path, zip_extract_max_file_size_in_mb):
@@ -67,32 +93,110 @@ def _fetch_zip_metadata(zip_file):
 
 
 def _ensure_files_in_archive_have_decent_sizes(zip_path, zip_metadata, zip_extract_max_file_size_in_mb):
-    # XXX Rule of thumb roughly made for Geckoview. Please increase if you have different data.
-    max_size_of_extracted_file = MAX_COMPRESSION_RATIO * zip_extract_max_file_size_in_mb
+    for file_name, file_metadata in zip_metadata.items():
+        compressed_size = file_metadata['compress_size']
+        real_size = file_metadata['file_size']
+        compressed_size_size_in_mb = compressed_size // (1024 * 1024)
 
-    for file_name, file_metadata in zip_metadata:
-        if file_metadata['compress_size'] > zip_extract_max_file_size_in_mb:
+        if compressed_size_size_in_mb > zip_extract_max_file_size_in_mb:
             raise TaskVerificationError(
                 'In archive "{}", compressed file "{}" is too big. Max accepted size (in MB): {}. File size (in MB): {}'.format(
-                    zip_path, file_name, file_metadata['compress_size'], zip_extract_max_file_size_in_mb
+                    zip_path, file_name, zip_extract_max_file_size_in_mb, compressed_size_size_in_mb
                 )
             )
 
-        if file_metadata['file_size'] > max_size_of_extracted_file:
+        compression_ratio = real_size / compressed_size
+        if compression_ratio > ZIP_MAX_COMPRESSION_RATIO:
             raise TaskVerificationError(
-                'In archive "{}", uncompressed file "{}" is too big. Max accepted size (in MB): {}. File size (in MB): {}'.format(
-                    zip_path, file_name, file_metadata['file_size'], max_size_of_extracted_file
+                'In archive "{}", file "{}" has a suspicious compression ratio. Max accepted: {}. Found: {}'.format(
+                    zip_path, file_name, ZIP_MAX_COMPRESSION_RATIO, compression_ratio
                 )
             )
 
-
-def _ensure_all_files_are_present(zip_path, zip_metadata):
-    # TODO ensure no full path nor .. are in there. This should be already done by ZipFile.extractall()
-    pass
+    log.info('Archive "{}" contains files with legitimate sizes.'.format(zip_path))
 
 
-def _extract_files(zip_path, zip_file):
-    extract_to = os.path.dirname(zip_path)
+def _ensure_all_expected_files_are_present_in_archive(zip_path, files_in_archive, expected_files):
+    files_in_archive = set(files_in_archive)
+
+    unique_expected_files = set(expected_files)
+    if len(expected_files) != len(unique_expected_files):
+        duplicated_files = [file for file in unique_expected_files if expected_files.count(file) > 1]
+        raise TaskVerificationError(
+            'Found duplicated expected files in archive "{}": {}'.format(zip_path, duplicated_files)
+        )
+
+    for file in files_in_archive:
+        if os.path.isabs(file):
+            raise TaskVerificationError(
+                'File "{}" in archive "{}" cannot be an absolute one.'.format(file, zip_path)
+            )
+        if os.path.normpath(file) != file:
+            raise TaskVerificationError(
+                'File "{}" in archive "{}" cannot contain up-level reference nor redundant separators'.format(
+                    file, zip_path
+                )
+            )
+        if file not in unique_expected_files:
+            raise TaskVerificationError(
+                'File "{}" is present in archive "{}" is not expected.'.format(
+                    file, zip_path
+                )
+            )
+
+    if len(files_in_archive) != len(unique_expected_files):
+        missing_expected_files = [file for file in unique_expected_files if file not in files_in_archive]
+        raise TaskVerificationError(
+            'Expected files are missing in archive "{}": {}'.format(zip_path, missing_expected_files)
+        )
+
+    log.info('Archive "{}" contains all expected files: {}'.format(zip_path, unique_expected_files))
+
+
+def _extract_and_check_output_files(zip_file, expected_files_in_archive):
+    zip_path = zip_file.filename
+
+    if not os.path.isabs(zip_path):
+        raise TaskVerificationError(
+            'Archive "{}" is not absolute path. Cannot know where to extract content'.format(zip_path)
+        )
+
+    extract_to = '{}.out'.format(zip_path)
+    expected_full_paths = [
+        os.path.join(extract_to, path_in_archive) for path_in_archive in expected_files_in_archive
+    ]
     log.info('Extracting archive "{}" to "{}"...'.format(zip_path, extract_to))
     zip_file.extractall(extract_to)
-    log.info('Extracted archive "{}"'.format(zip_path, extract_to))
+    log.info('Extracted archive "{}". Verfiying extracted data...'.format(zip_path, extract_to))
+
+    _ensure_all_expected_files_are_deflated_on_disk(zip_path, expected_full_paths)
+
+    return expected_full_paths
+
+
+def _ensure_all_expected_files_are_deflated_on_disk(zip_path, expected_full_paths):
+    for full_path in expected_full_paths:
+        if not os.path.exists(full_path):
+            raise TaskVerificationError(
+                'After extracting "{}", expected file "{}" does not exist'.format(zip_path, full_path)
+            )
+        if not os.path.isfile(full_path):
+            raise TaskVerificationError(
+                'After extracting "{}", "{}" is not a file'.format(zip_path, full_path)
+            )
+
+    log.info('All files declared in archive "{}" exist and are regular files: {}'.format(
+        zip_path, expected_full_paths
+    ))
+
+
+def _ensure_no_file_got_overwritten(task_id, extracted_files):
+    unique_paths = set(extracted_files)
+
+    if len(unique_paths) != len(extracted_files):
+        duplicated_paths = [path for path in unique_paths if extracted_files.count(path) > 1]
+        raise TaskVerificationError(
+            'Archives from task "{}" overwrote files: {}'.format(task_id, duplicated_paths)
+        )
+
+    log.info('All archives from task "{}" outputed different files.')

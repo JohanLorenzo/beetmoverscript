@@ -1,0 +1,59 @@
+---
+metadata:
+    name: "Maven repository"
+    description: "Maps artifacts to spec'd maven location"
+    owner: "release@mozilla.com"
+
+s3_bucket_path: maven2/org/mozilla/{{ artifact_id }}/{{ version }}/  # Maven groupId is org.mozilla
+
+mapping:
+{% for product in ['geckoview'] %}
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}.aar":
+    s3_key: {{ artifact_id }}-{{ version }}.aar
+    destinations:
+      - {{ artifact_id }}-{{ version }}.aar
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}.aar.md5":
+    s3_key: {{ artifact_id }}-{{ version }}.aar.md5
+    destinations:
+      - {{ artifact_id }}-{{ version }}.aar.md5
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}.aar.sha1":
+    s3_key: {{ artifact_id }}-{{ version }}.aar.sha1
+    destinations:
+      - {{ artifact_id }}-{{ version }}.aar.sha1
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}.pom":
+    s3_key: {{ artifact_id }}-{{ version }}.pom
+    destinations:
+      - {{ artifact_id }}-{{ version }}.pom
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}.pom.md5":
+    s3_key: {{ artifact_id }}-{{ version }}.pom.md5
+    destinations:
+      - {{ artifact_id }}-{{ version }}.pom.md5
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}.pom.sha1":
+    s3_key: {{ artifact_id }}-{{ version }}.pom.sha1
+    destinations:
+      - {{ artifact_id }}-{{ version }}.pom.sha1
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}-javadoc.jar":
+    s3_key: {{ artifact_id }}-{{ version }}-javadoc.jar
+    destinations:
+      - {{ artifact_id }}-{{ version }}-javadoc.jar
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}-javadoc.jar.md5":
+    s3_key: {{ artifact_id }}-{{ version }}-javadoc.jar.md5
+    destinations:
+      - {{ artifact_id }}-{{ version }}-javadoc.jar.md5
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}-javadoc.jar.sha1":
+    s3_key: {{ artifact_id }}-{{ version }}-javadoc.jar.sha1
+    destinations:
+      - {{ artifact_id }}-{{ version }}-javadoc.jar.sha1
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}-sources.jar":
+    s3_key: {{ artifact_id }}-{{ version }}-sources.jar
+    destinations:
+      - {{ artifact_id }}-{{ version }}-sources.jar
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}-sources.jar.md5":
+    s3_key: {{ artifact_id }}-{{ version }}-sources.jar.md5
+    destinations:
+      - {{ artifact_id }}-{{ version }}-sources.jar.md5
+  "org/mozilla/{{ artifact_id }}/{{ version }}/{{ product }}-sources.jar.sha1":
+    s3_key: {{ artifact_id }}-{{ version }}-sources.jar.sha1
+    destinations:
+      - {{ artifact_id }}-{{ version }}-sources.jar.sha1
+{% endfor %}
