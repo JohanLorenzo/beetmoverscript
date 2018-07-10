@@ -80,7 +80,7 @@
                                     "type": "string"
                                 }
                             },
-                            "extract": {
+                            "zipExtract": {
                                 "type": "boolean"
                             }
                         },

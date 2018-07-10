@@ -126,6 +126,24 @@ def get_upstream_artifacts(context, preserve_full_paths=False):
     return artifacts
 
 
+def get_upstream_artifacts_with_extract_param(context):
+    task_ids_and_relative_paths = [
+        (artifact_definition['taskId'], artifact_definition['paths'], artifact_definition.get('zipExtract', False))
+        for artifact_definition in context.task['payload']['upstreamArtifacts']
+    ]
+
+    return {
+        task_id: {
+            'paths': [
+                get_and_check_single_upstream_artifact_full_path(context, task_id, path)
+                for path in paths
+            ],
+            'zip_extract': zip_extract,
+        }
+        for task_id, paths, zip_extract in task_ids_and_relative_paths
+    }
+
+
 def get_release_props(context, platform_mapping=STAGE_PLATFORM_MAP):
     """determined via parsing the Nightly build job's payload and
     expanded the properties with props beetmover knows about."""

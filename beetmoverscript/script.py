@@ -25,7 +25,7 @@ from beetmoverscript.constants import (
 )
 from beetmoverscript.task import (
     validate_task_schema, add_balrog_manifest_to_artifacts,
-    get_upstream_artifacts, get_release_props,
+    get_upstream_artifacts, get_upstream_artifacts_with_extract_param, get_release_props,
     add_checksums_to_artifacts, get_task_bucket, get_task_action, validate_bucket_paths,
     get_updated_buildhub_artifact
 )
@@ -156,9 +156,11 @@ async def push_to_releases(context):
 
 async def push_to_maven(context):
     """Push artifacts to locations expected by maven clients (like mvn or gradle)"""
-    context.artifacts_to_beetmove = get_upstream_artifacts(context)
+    context.artifacts_to_beetmove = get_upstream_artifacts_with_extract_param(context)
     context.release_props = get_release_props(context)
     context.checksums = dict()  # Needed by downstream calls
+
+    context.artifacts_to_beetmove = check_and_extract_zip_archives(context.artifacts_to_beetmove)
 
     mapping_manifest = generate_beetmover_manifest(context)
     validate_bucket_paths(context.bucket, mapping_manifest['s3_bucket_path'])
