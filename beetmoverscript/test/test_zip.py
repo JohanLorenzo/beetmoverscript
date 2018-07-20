@@ -302,6 +302,10 @@ def test_ensure_files_in_archive_have_decent_sizes(zip_metadata, zip_max_size_in
     ['some_file', 'some_unexpected_file'],
     ['some_file'],
     True,
+), (
+    ['some_duplicated_file', 'some_duplicated_file'],
+    ['some_duplicated_file', 'some_duplicated_file'],
+    True,
 )))
 def test_ensure_all_expected_files_are_present_in_archive(files_in_archive, expected_files, raises):
     if raises:
