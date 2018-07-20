@@ -9,30 +9,36 @@ from beetmoverscript.constants import ZIP_MAX_COMPRESSION_RATIO
 log = logging.getLogger(__name__)
 
 
-def check_and_extract_zip_archives(artifacts_per_task_id, expected_files, zip_extract_max_file_size_in_mb):
+def check_and_extract_zip_archives(artifacts_per_task_id, expected_files_per_archive_per_task_id, zip_max_size_in_mb):
     deflated_artifacts_per_task_id = {}
-    for task_id, task_params in artifacts_per_task_id:
-        paths_for_task = task_params['paths']
 
-        if task_params['zip_extract'] is False:
-            log.debug('Skipping artifacts marked as not `zipExtract`able: {}'.format(paths_for_task))
-            deflated_artifacts_per_task_id[task_id] = paths_for_task
-            continue
+    for task_id, task_artifacts_params in artifacts_per_task_id.items():
+        for artifacts_param in task_artifacts_params:
+            paths_for_task = artifacts_param['paths']
+            deflated_artifacts = deflated_artifacts_per_task_id.get(task_id, [])
 
-        deflated_artifacts_per_task_id[task_id] = _check_and_extract_zip_archives_for_given_task(
-            task_id, paths_for_task, expected_files, zip_extract_max_file_size_in_mb
-        )
+            if artifacts_param['zip_extract'] is False:
+                log.debug('Skipping artifacts marked as not `zipExtract`able: {}'.format(paths_for_task))
+                deflated_artifacts.extend(paths_for_task)
+                deflated_artifacts_per_task_id[task_id] = deflated_artifacts
+                continue
+
+            expected_files_per_archive = expected_files_per_archive_per_task_id[task_id]
+            deflated_artifacts.extend(_check_and_extract_zip_archives_for_given_task(
+                task_id, expected_files_per_archive, zip_max_size_in_mb
+            ))
+            deflated_artifacts_per_task_id[task_id] = deflated_artifacts
 
     return deflated_artifacts_per_task_id
 
 
-def _check_and_extract_zip_archives_for_given_task(task_id, paths_for_task, expected_files, zip_extract_max_file_size_in_mb):
+def _check_and_extract_zip_archives_for_given_task(task_id, expected_files_per_archive, zip_max_size_in_mb):
     extracted_files = []
 
-    for path in paths_for_task:
-        log.info('Processing archive "{}" which marked as `zipExtract`able'.format(path))
-        extracted_files.append(
-            _check_extract_and_delete_zip_archive(path, expected_files, zip_extract_max_file_size_in_mb)
+    for archive_path, expected_files in expected_files_per_archive.items():
+        log.info('Processing archive "{}" which marked as `zipExtract`able'.format(archive_path))
+        extracted_files.extend(
+            _check_extract_and_delete_zip_archive(archive_path, expected_files, zip_max_size_in_mb)
         )
 
     # We make this check at this stage (and not when all files from all tasks got extracted)
@@ -43,14 +49,14 @@ def _check_and_extract_zip_archives_for_given_task(task_id, paths_for_task, expe
     return extracted_files
 
 
-def _check_extract_and_delete_zip_archive(zip_path, expected_files, zip_extract_max_file_size_in_mb):
-    _check_archive_itself(zip_path, zip_extract_max_file_size_in_mb)
+def _check_extract_and_delete_zip_archive(zip_path, expected_files, zip_max_size_in_mb):
+    _check_archive_itself(zip_path, zip_max_size_in_mb)
 
     with zipfile.ZipFile(zip_path) as zip_file:
         zip_metadata = _fetch_zip_metadata(zip_file)
 
         # we don't close the file descriptor here to avoid the tested file to be swapped by a rogue one
-        _ensure_files_in_archive_have_decent_sizes(zip_path, zip_metadata, zip_extract_max_file_size_in_mb)
+        _ensure_files_in_archive_have_decent_sizes(zip_path, zip_metadata, zip_max_size_in_mb)
         _ensure_all_expected_files_are_present_in_archive(zip_path, zip_metadata, expected_files)
         log.info('Content of archive "{}" is sane'.format(zip_path))
 
@@ -63,14 +69,14 @@ def _check_extract_and_delete_zip_archive(zip_path, expected_files, zip_extract_
     return extracted_files
 
 
-def _check_archive_itself(zip_path, zip_extract_max_file_size_in_mb):
+def _check_archive_itself(zip_path, zip_max_size_in_mb):
     zip_size = os.path.getsize(zip_path)
     zip_size_in_mb = zip_size // (1024 * 1024)
 
-    if zip_size_in_mb > zip_extract_max_file_size_in_mb:
+    if zip_size_in_mb > zip_max_size_in_mb:
         raise TaskVerificationError(
             'Archive "{}" is too big. Max accepted size (in MB): {}. File size (in MB): {}'.format(
-                zip_path, zip_size_in_mb, zip_extract_max_file_size_in_mb
+                zip_path, zip_size_in_mb, zip_max_size_in_mb
             )
         )
 
@@ -92,16 +98,16 @@ def _fetch_zip_metadata(zip_file):
     }
 
 
-def _ensure_files_in_archive_have_decent_sizes(zip_path, zip_metadata, zip_extract_max_file_size_in_mb):
+def _ensure_files_in_archive_have_decent_sizes(zip_path, zip_metadata, zip_max_size_in_mb):
     for file_name, file_metadata in zip_metadata.items():
         compressed_size = file_metadata['compress_size']
         real_size = file_metadata['file_size']
         compressed_size_size_in_mb = compressed_size // (1024 * 1024)
 
-        if compressed_size_size_in_mb > zip_extract_max_file_size_in_mb:
+        if compressed_size_size_in_mb > zip_max_size_in_mb:
             raise TaskVerificationError(
                 'In archive "{}", compressed file "{}" is too big. Max accepted size (in MB): {}. File size (in MB): {}'.format(
-                    zip_path, file_name, zip_extract_max_file_size_in_mb, compressed_size_size_in_mb
+                    zip_path, file_name, zip_max_size_in_mb, compressed_size_size_in_mb
                 )
             )
 

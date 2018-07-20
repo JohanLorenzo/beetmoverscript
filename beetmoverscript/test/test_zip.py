@@ -8,6 +8,10 @@ from pathlib import Path
 from scriptworker.exceptions import TaskVerificationError
 
 from beetmoverscript.zip import (
+    check_and_extract_zip_archives,
+    _check_and_extract_zip_archives_for_given_task,
+    _check_extract_and_delete_zip_archive,
+    _check_archive_itself,
     _fetch_zip_metadata,
     _ensure_files_in_archive_have_decent_sizes,
     _ensure_all_expected_files_are_present_in_archive,
@@ -15,6 +19,175 @@ from beetmoverscript.zip import (
     _ensure_all_expected_files_are_deflated_on_disk,
     _ensure_no_file_got_overwritten,
 )
+
+
+def _create_zip(in_folder, files_and_content, archive_name='some_archive.zip'):
+    archive_path = os.path.join(in_folder, archive_name)
+    with zipfile.ZipFile(archive_path, mode='w') as zip:
+        for file_name_in_archive, content in files_and_content.items():
+            with tempfile.NamedTemporaryFile(mode='w+') as temp_file:
+                temp_file.write(content)
+                temp_file.seek(0)
+                zip.write(temp_file.name, file_name_in_archive)
+
+    return archive_path
+
+
+def test_check_and_extract_zip_archives():
+    first_task_id_archive1_files_and_content = {
+        'some_file1': 'some content 1',
+        'some/subfolder/file1': 'some other content 1',
+    }
+    first_task_id_archive2_files_and_content = {
+        'some_file2': 'some content 2',
+        'some/subfolder/file2': 'some other content 2',
+    }
+    third_task_id_archive1_files_and_content = {
+        'some_file3': 'some content 3',
+        'some/subfolder/file3': 'some other content 3',
+    }
+
+    with tempfile.TemporaryDirectory() as d:
+        first_task_id_archive1_path = _create_zip(
+            d, first_task_id_archive1_files_and_content, archive_name='firstTaskId-archive1.zip'
+        )
+        first_task_id_archive2_path = _create_zip(
+            d, first_task_id_archive2_files_and_content, archive_name='firstTaskId-archive2.zip'
+        )
+        third_task_id_archive1_path = _create_zip(
+            d, third_task_id_archive1_files_and_content, archive_name='thirdTaskId-archive1.zip'
+        )
+
+        artifacts_per_task_id = {
+            'firstTaskId': [{
+                'paths': ['/a/non/archive', '/another/non/archive'],
+                'zip_extract': False,
+            }, {
+                'paths': [first_task_id_archive1_path, first_task_id_archive2_path],
+                'zip_extract': True,
+            }],
+            'secondTaskId': [{
+                'paths': ['/just/another/regular/file'],
+                'zip_extract': False,
+            }],
+            'thirdTaskId': [{
+                'paths': [third_task_id_archive1_path],
+                'zip_extract': True,
+            }],
+        }
+
+        expected_files_per_archive_per_task_id = {
+            'firstTaskId': {
+                first_task_id_archive1_path: first_task_id_archive1_files_and_content,
+                first_task_id_archive2_path: first_task_id_archive2_files_and_content,
+            },
+            'thirdTaskId': {
+                third_task_id_archive1_path: third_task_id_archive1_files_and_content,
+            },
+        }
+
+        files_once_extracted = check_and_extract_zip_archives(
+            artifacts_per_task_id, expected_files_per_archive_per_task_id, zip_max_size_in_mb=100
+        )
+
+        assert files_once_extracted == {
+            'firstTaskId': [
+                '/a/non/archive',
+                '/another/non/archive',
+                os.path.join(d, 'firstTaskId-archive1.zip.out', 'some_file1'),
+                os.path.join(d, 'firstTaskId-archive1.zip.out', 'some', 'subfolder', 'file1'),
+                os.path.join(d, 'firstTaskId-archive2.zip.out', 'some_file2'),
+                os.path.join(d, 'firstTaskId-archive2.zip.out', 'some', 'subfolder', 'file2'),
+            ],
+            'secondTaskId': ['/just/another/regular/file'],
+            'thirdTaskId': [
+                os.path.join(d, 'thirdTaskId-archive1.zip.out', 'some_file3'),
+                os.path.join(d, 'thirdTaskId-archive1.zip.out', 'some', 'subfolder', 'file3'),
+            ],
+        }
+
+
+def test_check_and_extract_zip_archives_for_given_task():
+    archive1_files_and_content = {
+        'some_file1': 'some content 1',
+        'some/subfolder/file1': 'some other content 1',
+    }
+    archive2_files_and_content = {
+        'some_file2': 'some content 2',
+        'some/subfolder/file2': 'some other content 2',
+    }
+
+    with tempfile.TemporaryDirectory() as d:
+        archive1_path = _create_zip(d, archive1_files_and_content, archive_name='archive1.zip')
+        archive2_path = _create_zip(d, archive2_files_and_content, archive_name='archive2.zip')
+
+        expected_files_per_archive = {
+            archive1_path: ['some_file1', 'some/subfolder/file1'],
+            archive2_path: ['some_file2', 'some/subfolder/file2'],
+        }
+
+        extracted_files = _check_and_extract_zip_archives_for_given_task(
+            'someTaskId', expected_files_per_archive, zip_max_size_in_mb=100
+        )
+
+        assert sorted(extracted_files) == sorted([
+            os.path.join(d, 'archive1.zip.out', 'some_file1'),
+            os.path.join(d, 'archive1.zip.out', 'some', 'subfolder', 'file1'),
+            os.path.join(d, 'archive2.zip.out', 'some_file2'),
+            os.path.join(d, 'archive2.zip.out', 'some', 'subfolder', 'file2'),
+        ])
+
+
+def test_check_extract_and_delete_zip_archive():
+    files_and_content = {
+        'some_file': 'some content',
+        'some/subfolder/file': 'some other content',
+    }
+
+    with tempfile.TemporaryDirectory() as d:
+        archive_path = _create_zip(d, files_and_content)
+        extracted_files = _check_extract_and_delete_zip_archive(
+            archive_path, files_and_content.keys(), zip_max_size_in_mb=100
+        )
+        assert extracted_files == [
+            os.path.join(d, 'some_archive.zip.out', 'some_file'),
+            os.path.join(d, 'some_archive.zip.out', 'some/subfolder/file'),
+        ]
+        for file in extracted_files:
+            assert os.path.exists(file)
+            assert os.path.isfile(file)
+            key = [f for f in files_and_content.keys() if file.endswith(f)][0]
+            with open(file) as f:
+                assert f.read() == files_and_content[key]
+
+        assert not os.path.exists(archive_path)
+
+
+@pytest.mark.parametrize('file_size_in_mb, is_zip, zip_max_size_in_mb, raises', (
+    (1, True, 2, False),
+    (3, True, 2, True),
+    (3, True, 4, False),
+    (1, False, 2, True),
+))
+def test_check_archive_itself(file_size_in_mb, is_zip, zip_max_size_in_mb, raises):
+    with tempfile.TemporaryDirectory() as d:
+        file_path = os.path.join(d, 'some_file')
+        with open(file_path, mode='wb') as f:
+            f.write(b'a' * (file_size_in_mb * 1024 * 1024))
+
+        archive_path = os.path.join(d, 'some_archive')
+
+        if is_zip:
+            with zipfile.ZipFile(archive_path, mode='w') as zip:   # default does not compress data
+                zip.write(file_path)
+        else:
+            archive_path = file_path
+
+        if raises:
+            with pytest.raises(TaskVerificationError):
+                _check_archive_itself(archive_path, zip_max_size_in_mb)
+        else:
+            _check_archive_itself(archive_path, zip_max_size_in_mb)
 
 
 def test_fetch_zip_metadata():
@@ -43,7 +216,7 @@ def test_fetch_zip_metadata():
             }
 
 
-@pytest.mark.parametrize('zip_metadata, zip_extract_max_file_size_in_mb, raises', ((
+@pytest.mark.parametrize('zip_metadata, zip_max_size_in_mb, raises', ((
     {
         'file1': {
             'compress_size': 1000,
@@ -93,12 +266,12 @@ def test_fetch_zip_metadata():
     100,
     False,
 )))
-def test_ensure_files_in_archive_have_decent_sizes(zip_metadata, zip_extract_max_file_size_in_mb, raises):
+def test_ensure_files_in_archive_have_decent_sizes(zip_metadata, zip_max_size_in_mb, raises):
     if raises:
         with pytest.raises(TaskVerificationError):
-            _ensure_files_in_archive_have_decent_sizes('/some/archive.zip', zip_metadata, zip_extract_max_file_size_in_mb)
+            _ensure_files_in_archive_have_decent_sizes('/some/archive.zip', zip_metadata, zip_max_size_in_mb)
     else:
-        _ensure_files_in_archive_have_decent_sizes('/some/archive.zip', zip_metadata, zip_extract_max_file_size_in_mb)
+        _ensure_files_in_archive_have_decent_sizes('/some/archive.zip', zip_metadata, zip_max_size_in_mb)
 
 
 @pytest.mark.parametrize('files_in_archive, expected_files, raises', ((

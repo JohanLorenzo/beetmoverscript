@@ -127,19 +127,20 @@ def get_upstream_artifacts(context, preserve_full_paths=False):
 
 
 def get_upstream_artifacts_with_extract_param(context):
-    task_ids_and_relative_paths = [
+    return [
         (artifact_definition['taskId'], artifact_definition['paths'], artifact_definition.get('zipExtract', False))
         for artifact_definition in context.task['payload']['upstreamArtifacts']
     ]
 
+    # TODO not use a dict comprehension as it erases paths
     return {
-        task_id: {
+        task_id: [
             'paths': [
                 get_and_check_single_upstream_artifact_full_path(context, task_id, path)
                 for path in paths
             ],
             'zip_extract': zip_extract,
-        }
+        ]
         for task_id, paths, zip_extract in task_ids_and_relative_paths
     }
 
