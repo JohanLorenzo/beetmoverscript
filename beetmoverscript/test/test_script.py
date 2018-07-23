@@ -92,8 +92,34 @@ async def test_push_to_releases(context, mocker, candidates_keys,
 
 @pytest.mark.asyncio
 async def test_push_to_maven(context, mocker):
-    mocker.patch('beetmoverscript.script.move_beets', new=noop_async)
+    async def assert_artifacts_to_beetmove(_, artifacts_to_beetmove, __):
+        assert artifacts_to_beetmove == {'en-US': [
+            '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar',
+            '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.md5',
+            '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.sha1',
+        ]}
+
+    mocker.patch('beetmoverscript.script.move_beets', new=assert_artifacts_to_beetmove)
+
     mocker.patch('beetmoverscript.utils.JINJA_ENV', get_test_jinja_env())
+    context.task['payload']['upstreamArtifacts'] = [{
+        'paths': ['public/build/target.maven.zip'],
+        'taskId': 'someTaskId',
+        'taskType': 'build',
+        'zipExtract': True,
+    }]
+    mocker.patch('beetmoverscript.task.get_upstream_artifacts_with_zip_extract_param', new=lambda _: {
+        'someTaskId': [{
+            'paths': ['/work_dir/cot/someTaskId/public/build/target.maven.zip'],
+            'zip_extract': True,
+        }]
+    })
+    mocker.patch('beetmoverscript.zip.check_and_extract_zip_archives', new=lambda _, __, ___: [
+        '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar',
+        '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.md5',
+        '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.sha1',
+    ])
+
     await push_to_maven(context)
 
 

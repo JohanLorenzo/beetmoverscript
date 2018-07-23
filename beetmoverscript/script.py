@@ -17,15 +17,18 @@ from scriptworker import client
 from scriptworker.exceptions import ScriptWorkerTaskException, ScriptWorkerRetryException
 from scriptworker.utils import retry_async, raise_future_exceptions
 
+from beetmoverscript import task, zip
+
 from beetmoverscript.constants import (
     MIME_MAP, RELEASE_BRANCHES, CACHE_CONTROL_MAXAGE, RELEASE_EXCLUDE,
     NORMALIZED_BALROG_PLATFORMS, PARTNER_REPACK_PUBLIC_PREFIX_TMPL,
     PARTNER_REPACK_PRIVATE_REGEXES, PARTNER_REPACK_PUBLIC_REGEXES, BUILDHUB_ARTIFACT,
     INSTALLER_ARTIFACTS, ZIP_MAX_COMPRESSION_RATIO
 )
+from beetmoverscript.maven import get_maven_expected_files_per_archive_per_task_id
 from beetmoverscript.task import (
     validate_task_schema, add_balrog_manifest_to_artifacts,
-    get_upstream_artifacts, get_upstream_artifacts_with_zip_extract_param, get_release_props,
+    get_upstream_artifacts, get_release_props,
     add_checksums_to_artifacts, get_task_bucket, get_task_action, validate_bucket_paths,
     get_updated_buildhub_artifact
 )
@@ -38,7 +41,6 @@ from beetmoverscript.utils import (
     get_product_name, is_partner_action, is_partner_private_task,
     is_partner_public_task, write_json
 )
-from beetmoverscript.zip import check_and_extract_zip_archives
 
 log = logging.getLogger(__name__)
 
@@ -157,18 +159,21 @@ async def push_to_releases(context):
 
 async def push_to_maven(context):
     """Push artifacts to locations expected by maven clients (like mvn or gradle)"""
-    context.artifacts_to_beetmove = get_upstream_artifacts_with_zip_extract_param(context)
+    context.artifacts_to_beetmove = task.get_upstream_artifacts_with_zip_extract_param(context)
     context.release_props = get_release_props(context)
     context.checksums = dict()  # Needed by downstream calls
 
     mapping_manifest = generate_beetmover_manifest(context)
     validate_bucket_paths(context.bucket, mapping_manifest['s3_bucket_path'])
 
-    expected_files = list(mapping_manifest['mapping'].keys())
+    expected_files = get_maven_expected_files_per_archive_per_task_id(
+        context.task['payload']['upstreamArtifacts'], mapping_manifest
+    )
 
     context.artifacts_to_beetmove = {
-        'en-US': check_and_extract_zip_archives(
-            context.artifacts_to_beetmove, expected_files,
+        'en-US': zip.check_and_extract_zip_archives(
+            context.artifacts_to_beetmove,
+            expected_files,
             context.config.get('zip_extract_max_file_size_in_mb', ZIP_MAX_COMPRESSION_RATIO)
         )
     }

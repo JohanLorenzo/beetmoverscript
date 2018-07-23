@@ -98,51 +98,51 @@ def test_generate_manifest_maven(context, mocker):
     assert generate_beetmover_manifest(context) == {
         'mapping': {
             'en-US': {
-                'geckoview-javadoc.jar': {
+                'geckoview-nightly-x86-63.0.20181231120000-javadoc.jar': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000-javadoc.jar'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000-javadoc.jar',
                 },
-                'geckoview-javadoc.jar.md5': {
+                'geckoview-nightly-x86-63.0.20181231120000-javadoc.jar.md5': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000-javadoc.jar.md5'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000-javadoc.jar.md5',
                 },
-                'geckoview-javadoc.jar.sha1': {
+                'geckoview-nightly-x86-63.0.20181231120000-javadoc.jar.sha1': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000-javadoc.jar.sha1'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000-javadoc.jar.sha1',
                 },
-                'geckoview-sources.jar': {
+                'geckoview-nightly-x86-63.0.20181231120000-sources.jar': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000-sources.jar'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000-sources.jar',
                 },
-                'geckoview-sources.jar.md5': {
+                'geckoview-nightly-x86-63.0.20181231120000-sources.jar.md5': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000-sources.jar.md5'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000-sources.jar.md5',
                 },
-                'geckoview-sources.jar.sha1': {
+                'geckoview-nightly-x86-63.0.20181231120000-sources.jar.sha1': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000-sources.jar.sha1'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000-sources.jar.sha1',
                 },
-                'geckoview.aar': {
+                'geckoview-nightly-x86-63.0.20181231120000.aar': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000.aar'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000.aar',
                 },
-                'geckoview.aar.md5': {
+                'geckoview-nightly-x86-63.0.20181231120000.aar.md5': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000.aar.md5'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000.aar.md5',
                 },
-                'geckoview.aar.sha1': {
+                'geckoview-nightly-x86-63.0.20181231120000.aar.sha1': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000.aar.sha1'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000.aar.sha1',
                 },
-                'geckoview.pom': {
+                'geckoview-nightly-x86-63.0.20181231120000.pom': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000.pom'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000.pom',
                 },
-                'geckoview.pom.md5': {
+                'geckoview-nightly-x86-63.0.20181231120000.pom.md5': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000.pom.md5'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000.pom.md5',
                 },
-                'geckoview.pom.sha1': {
+                'geckoview-nightly-x86-63.0.20181231120000.pom.sha1': {
                     'destinations': ['geckoview-nightly-x86-63.0.20181231120000.pom.sha1'],
                     's3_key': 'geckoview-nightly-x86-63.0.20181231120000.pom.sha1'
                 },
