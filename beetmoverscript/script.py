@@ -166,10 +166,12 @@ async def push_to_maven(context):
 
     expected_files = list(mapping_manifest['mapping'].keys())
 
-    context.artifacts_to_beetmove = check_and_extract_zip_archives(
-        context.artifacts_to_beetmove, expected_files,
-        context.config.get('zip_extract_max_file_size_in_mb', ZIP_MAX_COMPRESSION_RATIO)
-    )
+    context.artifacts_to_beetmove = {
+        'en-US': check_and_extract_zip_archives(
+            context.artifacts_to_beetmove, expected_files,
+            context.config.get('zip_extract_max_file_size_in_mb', ZIP_MAX_COMPRESSION_RATIO)
+        )
+    }
 
     await move_beets(context, context.artifacts_to_beetmove, mapping_manifest)
 

@@ -90,21 +90,17 @@ def test_check_and_extract_zip_archives():
             artifacts_per_task_id, expected_files_per_archive_per_task_id, zip_max_size_in_mb=100
         )
 
-        assert files_once_extracted == {
-            'firstTaskId': [
-                '/a/non/archive',
-                '/another/non/archive',
-                os.path.join(d, 'firstTaskId-archive1.zip.out', 'some_file1'),
-                os.path.join(d, 'firstTaskId-archive1.zip.out', 'some', 'subfolder', 'file1'),
-                os.path.join(d, 'firstTaskId-archive2.zip.out', 'some_file2'),
-                os.path.join(d, 'firstTaskId-archive2.zip.out', 'some', 'subfolder', 'file2'),
-            ],
-            'secondTaskId': ['/just/another/regular/file'],
-            'thirdTaskId': [
-                os.path.join(d, 'thirdTaskId-archive1.zip.out', 'some_file3'),
-                os.path.join(d, 'thirdTaskId-archive1.zip.out', 'some', 'subfolder', 'file3'),
-            ],
-        }
+        assert sorted(files_once_extracted) == sorted([
+            '/a/non/archive',
+            '/another/non/archive',
+            os.path.join(d, 'firstTaskId-archive1.zip.out', 'some_file1'),
+            os.path.join(d, 'firstTaskId-archive1.zip.out', 'some', 'subfolder', 'file1'),
+            os.path.join(d, 'firstTaskId-archive2.zip.out', 'some_file2'),
+            os.path.join(d, 'firstTaskId-archive2.zip.out', 'some', 'subfolder', 'file2'),
+            '/just/another/regular/file',
+            os.path.join(d, 'thirdTaskId-archive1.zip.out', 'some_file3'),
+            os.path.join(d, 'thirdTaskId-archive1.zip.out', 'some', 'subfolder', 'file3'),
+        ])
 
 
 def test_check_and_extract_zip_archives_for_given_task():

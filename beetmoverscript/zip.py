@@ -10,26 +10,23 @@ log = logging.getLogger(__name__)
 
 
 def check_and_extract_zip_archives(artifacts_per_task_id, expected_files_per_archive_per_task_id, zip_max_size_in_mb):
-    deflated_artifacts_per_task_id = {}
+    deflated_artifacts = []
 
     for task_id, task_artifacts_params in artifacts_per_task_id.items():
         for artifacts_param in task_artifacts_params:
             paths_for_task = artifacts_param['paths']
-            deflated_artifacts = deflated_artifacts_per_task_id.get(task_id, [])
 
             if artifacts_param['zip_extract'] is False:
                 log.debug('Skipping artifacts marked as not `zipExtract`able: {}'.format(paths_for_task))
                 deflated_artifacts.extend(paths_for_task)
-                deflated_artifacts_per_task_id[task_id] = deflated_artifacts
                 continue
 
             expected_files_per_archive = expected_files_per_archive_per_task_id[task_id]
             deflated_artifacts.extend(_check_and_extract_zip_archives_for_given_task(
                 task_id, expected_files_per_archive, zip_max_size_in_mb
             ))
-            deflated_artifacts_per_task_id[task_id] = deflated_artifacts
 
-    return deflated_artifacts_per_task_id
+    return deflated_artifacts
 
 
 def _check_and_extract_zip_archives_for_given_task(task_id, expected_files_per_archive, zip_max_size_in_mb):
