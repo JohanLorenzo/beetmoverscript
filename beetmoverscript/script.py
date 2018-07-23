@@ -25,7 +25,7 @@ from beetmoverscript.constants import (
 )
 from beetmoverscript.task import (
     validate_task_schema, add_balrog_manifest_to_artifacts,
-    get_upstream_artifacts, get_upstream_artifacts_with_extract_param, get_release_props,
+    get_upstream_artifacts, get_release_props,
     add_checksums_to_artifacts, get_task_bucket, get_task_action, validate_bucket_paths,
     get_updated_buildhub_artifact
 )

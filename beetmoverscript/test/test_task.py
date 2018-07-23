@@ -55,6 +55,14 @@ def test_get_upstream_artifacts(expected, preserve):
     assert sorted(list(artifacts_to_beetmove['en-US'])) == sorted(expected)
 
 
+def test_get_upstream_artifacts_with_zip_extract_param():
+    context = Context()
+    context.config = get_fake_valid_config()
+    context.task = get_fake_valid_task()
+    context.properties = context.task['payload']['releaseProperties']
+
+    assert get_upstream_artifacts_with_zip_extract_param(context) == {}
+
 # validate_task {{{1
 def test_validate_task(context):
     validate_task_schema(context)
