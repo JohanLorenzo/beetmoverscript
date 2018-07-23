@@ -21,11 +21,11 @@ from beetmoverscript.constants import (
     MIME_MAP, RELEASE_BRANCHES, CACHE_CONTROL_MAXAGE, RELEASE_EXCLUDE,
     NORMALIZED_BALROG_PLATFORMS, PARTNER_REPACK_PUBLIC_PREFIX_TMPL,
     PARTNER_REPACK_PRIVATE_REGEXES, PARTNER_REPACK_PUBLIC_REGEXES, BUILDHUB_ARTIFACT,
-    INSTALLER_ARTIFACTS
+    INSTALLER_ARTIFACTS, ZIP_MAX_COMPRESSION_RATIO
 )
 from beetmoverscript.task import (
     validate_task_schema, add_balrog_manifest_to_artifacts,
-    get_upstream_artifacts, get_release_props,
+    get_upstream_artifacts, get_upstream_artifacts_with_zip_extract_param, get_release_props,
     add_checksums_to_artifacts, get_task_bucket, get_task_action, validate_bucket_paths,
     get_updated_buildhub_artifact
 )
@@ -157,7 +157,7 @@ async def push_to_releases(context):
 
 async def push_to_maven(context):
     """Push artifacts to locations expected by maven clients (like mvn or gradle)"""
-    context.artifacts_to_beetmove = get_upstream_artifacts_with_extract_param(context)
+    context.artifacts_to_beetmove = get_upstream_artifacts_with_zip_extract_param(context)
     context.release_props = get_release_props(context)
     context.checksums = dict()  # Needed by downstream calls
 
@@ -167,7 +167,8 @@ async def push_to_maven(context):
     expected_files = list(mapping_manifest['mapping'].keys())
 
     context.artifacts_to_beetmove = check_and_extract_zip_archives(
-        context.artifacts_to_beetmove, expected_files, context.config['zip_extract_max_file_size_in_mb']
+        context.artifacts_to_beetmove, expected_files,
+        context.config.get('zip_extract_max_file_size_in_mb', ZIP_MAX_COMPRESSION_RATIO)
     )
 
     await move_beets(context, context.artifacts_to_beetmove, mapping_manifest)

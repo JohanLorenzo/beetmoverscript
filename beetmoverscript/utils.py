@@ -177,7 +177,7 @@ def _generate_beetmover_template_args_maven(task, release_props):
         'branch': release_props['branch'],
         'buildid': release_props['buildid'],
         'product': release_props['appName'],
-        'template_key': 'maven',
+        'template_key': 'maven_{}'.format(release_props['appName']),
         'version': task['payload']['version'],
     }
 
