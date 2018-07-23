@@ -168,7 +168,7 @@ def update_props(context, props, platform_mapping):
     `stage_platform` as we need both in the beetmover template manifests."""
     props = deepcopy(props)
 
-    stage_platform = props["platform"]
+    stage_platform = props.get('platform', '')
     # for some products/platforms this mapping is not needed, hence the default
     props["platform"] = platform_mapping.get(stage_platform, stage_platform)
     props["stage_platform"] = stage_platform
