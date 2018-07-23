@@ -14,8 +14,8 @@ from beetmoverscript.constants import (
     RESTRICTED_BUCKET_PATHS,
     CHECKSUMS_CUSTOM_FILE_NAMING
 )
+from scriptworker import artifacts as scriptworker_artifacts
 from scriptworker.exceptions import ScriptWorkerTaskException
-from scriptworker.artifacts import get_and_check_single_upstream_artifact_full_path
 
 log = logging.getLogger(__name__)
 
@@ -116,7 +116,7 @@ def get_upstream_artifacts(context, preserve_full_paths=False):
         locale = artifact_dict['locale']
         artifacts[locale] = artifacts.get(locale, {})
         for path in artifact_dict['paths']:
-            abs_path = get_and_check_single_upstream_artifact_full_path(
+            abs_path = scriptworker_artifacts.get_and_check_single_upstream_artifact_full_path(
                 context, artifact_dict['taskId'], path
             )
             if preserve_full_paths:
@@ -127,22 +127,26 @@ def get_upstream_artifacts(context, preserve_full_paths=False):
 
 
 def get_upstream_artifacts_with_zip_extract_param(context):
-    return [
-        (artifact_definition['taskId'], artifact_definition['paths'], artifact_definition.get('zipExtract', False))
-        for artifact_definition in context.task['payload']['upstreamArtifacts']
-    ]
+    # XXX A dict comprehension isn't used because upstream_definition would be erased if the same
+    # taskId is present twice in upstreamArtifacts
+    upstream_artifacts_per_task_id = {}
 
-    # TODO not use a dict comprehension as it erases paths
-    # return {
-    #     task_id: [
-    #         'paths': [
-    #             get_and_check_single_upstream_artifact_full_path(context, task_id, path)
-    #             for path in paths
-    #         ],
-    #         'zip_extract': zip_extract,
-    #     ]
-    #     for task_id, paths, zip_extract in task_ids_and_relative_paths
-    # }
+    for artifact_definition in context.task['payload']['upstreamArtifacts']:
+        task_id = artifact_definition['taskId']
+        upstream_definitions = upstream_artifacts_per_task_id.get(task_id, [])
+
+        new_upstream_definition = {
+            'paths': [
+                scriptworker_artifacts.get_and_check_single_upstream_artifact_full_path(context, task_id, path)
+                for path in artifact_definition['paths']
+            ],
+            'zip_extract': artifact_definition.get('zipExtract', False),
+        }
+
+        upstream_definitions.append(new_upstream_definition)
+        upstream_artifacts_per_task_id[task_id] = upstream_definitions
+
+    return upstream_artifacts_per_task_id
 
 
 def get_release_props(context, platform_mapping=STAGE_PLATFORM_MAP):
