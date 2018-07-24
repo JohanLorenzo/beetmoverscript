@@ -73,7 +73,7 @@ def _check_archive_itself(zip_path, zip_max_size_in_mb):
     if zip_size_in_mb > zip_max_size_in_mb:
         raise TaskVerificationError(
             'Archive "{}" is too big. Max accepted size (in MB): {}. File size (in MB): {}'.format(
-                zip_path, zip_size_in_mb, zip_max_size_in_mb
+                zip_path, zip_max_size_in_mb, zip_size_in_mb
             )
         )
 

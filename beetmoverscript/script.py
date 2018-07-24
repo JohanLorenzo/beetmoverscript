@@ -23,7 +23,7 @@ from beetmoverscript.constants import (
     MIME_MAP, RELEASE_BRANCHES, CACHE_CONTROL_MAXAGE, RELEASE_EXCLUDE,
     NORMALIZED_BALROG_PLATFORMS, PARTNER_REPACK_PUBLIC_PREFIX_TMPL,
     PARTNER_REPACK_PRIVATE_REGEXES, PARTNER_REPACK_PUBLIC_REGEXES, BUILDHUB_ARTIFACT,
-    INSTALLER_ARTIFACTS, ZIP_MAX_COMPRESSION_RATIO
+    INSTALLER_ARTIFACTS, ZIP_MAX_FILE_SIZE_IN_MB
 )
 from beetmoverscript.maven import get_maven_expected_files_per_archive_per_task_id
 from beetmoverscript.task import (
@@ -174,7 +174,7 @@ async def push_to_maven(context):
         'en-US': zip.check_and_extract_zip_archives(
             context.artifacts_to_beetmove,
             expected_files,
-            context.config.get('zip_extract_max_file_size_in_mb', ZIP_MAX_COMPRESSION_RATIO)
+            context.config.get('zip_extract_max_file_size_in_mb', ZIP_MAX_FILE_SIZE_IN_MB)
         )
     }
 

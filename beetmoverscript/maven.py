@@ -1,7 +1,5 @@
 import os
 
-from scriptworker.utils import get_single_item_from_sequence
-
 _MAVEN_ZIP_NAME = 'target.maven.zip'
 
 
