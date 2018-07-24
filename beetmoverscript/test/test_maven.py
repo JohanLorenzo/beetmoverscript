@@ -3,12 +3,12 @@ import pytest
 from beetmoverscript.maven import get_maven_expected_files_per_archive_per_task_id
 
 
-@pytest.mark.parametrize('upstream_artifacts, mapping_manifest, expected, raises', ((
-    [{
-        'paths': ['public/build/target.maven.zip'],
-        'taskId': 'someTaskId',
-        'taskType': 'build',
-    }],
+@pytest.mark.parametrize('upstream_artifacts_per_task_id, mapping_manifest, expected, raises', ((
+    {
+        'someTaskId': [{
+            'paths': ['/work_dir/cot/someTaskId/public/build/target.maven.zip'],
+        }],
+    },
     {
         'mapping': {
             'en-US': {
@@ -30,7 +30,7 @@ from beetmoverscript.maven import get_maven_expected_files_per_archive_per_task_
     },
     {
         'someTaskId': {
-            'target.maven.zip': [
+            '/work_dir/cot/someTaskId/public/build/target.maven.zip': [
                 'org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar',
                 'org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.md5',
                 'org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.sha1',
@@ -48,11 +48,11 @@ from beetmoverscript.maven import get_maven_expected_files_per_archive_per_task_
     },
     False,
 ), (
-    [{
-        'paths': ['public/build/target.jsshell.zip'],
-        'taskId': 'someTaskId',
-        'taskType': 'build',
-    }],
+    {
+        'someTaskId': [{
+            'paths': ['/work_dir/cot/someTaskId/public/build/target.jsshell.zip'],
+        }],
+    },
     {
         'mapping': {
             'en-US': {
@@ -67,15 +67,36 @@ from beetmoverscript.maven import get_maven_expected_files_per_archive_per_task_
     {},
     True,
 ), (
-    [{
-        'paths': ['public/build/target.maven.zip'],
-        'taskId': 'someTaskId',
-        'taskType': 'build',
-    }, {
-        'paths': ['public/build/target.maven.zip'],
-        'taskId': 'someOtherTaskId',
-        'taskType': 'build',
-    }],
+    {
+        'someTaskId': [{
+            'paths': ['/work_dir/cot/someTaskId/public/build/target.maven.zip'],
+        }],
+        'someOtherTaskId': [{
+            'paths': ['/work_dir/cot/someTaskId/public/build/target.maven.zip'],
+        }],
+    },
+    {
+        'mapping': {
+            'en-US': {
+                'geckoview-beta-x86-62.0b3.aar': {},
+                'geckoview-beta-x86-62.0b3.aar.md5': {},
+                'geckoview-beta-x86-62.0b3.aar.sha1': {},
+                'geckoview-beta-x86-62.0b3-sources.jar.sha1': {},
+            }
+        },
+        's3_bucket_path': 'maven2/org/mozilla/geckoview-beta-x86/62.0b3/',
+    },
+    {},
+    True,
+), (
+    {
+        'someTaskId': [{
+            'paths': [
+                '/work_dir/cot/someTaskId/public/build/target.maven.zip',
+                '/work_dir/cot/someTaskId/public/build/other/folder/target.maven.zip'
+            ],
+        }],
+    },
     {
         'mapping': {
             'en-US': {
@@ -90,11 +111,11 @@ from beetmoverscript.maven import get_maven_expected_files_per_archive_per_task_
     {},
     True,
 )))
-def test_get_maven_expected_files_per_archive_per_task_id(upstream_artifacts, mapping_manifest, expected, raises):
+def test_get_maven_expected_files_per_archive_per_task_id(upstream_artifacts_per_task_id, mapping_manifest, expected, raises):
     if raises:
         with pytest.raises(ValueError):
-            get_maven_expected_files_per_archive_per_task_id(upstream_artifacts, mapping_manifest)
+            get_maven_expected_files_per_archive_per_task_id(upstream_artifacts_per_task_id, mapping_manifest)
     else:
         assert get_maven_expected_files_per_archive_per_task_id(
-            upstream_artifacts, mapping_manifest
+            upstream_artifacts_per_task_id, mapping_manifest
         ) == expected

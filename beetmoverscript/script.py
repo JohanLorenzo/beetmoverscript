@@ -167,7 +167,7 @@ async def push_to_maven(context):
     validate_bucket_paths(context.bucket, mapping_manifest['s3_bucket_path'])
 
     expected_files = get_maven_expected_files_per_archive_per_task_id(
-        context.task['payload']['upstreamArtifacts'], mapping_manifest
+        context.artifacts_to_beetmove, mapping_manifest
     )
 
     context.artifacts_to_beetmove = {
