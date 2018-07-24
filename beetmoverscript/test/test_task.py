@@ -184,6 +184,8 @@ def test_get_task_action(scopes, expected, raises):
     "nightly", "pub/firefox/releases", True
 ), (
     "maven", "maven2/org/mozilla", False
+), (
+    "maven-staging", "maven2/org/mozilla", False
 )))
 def test_validate_bucket_paths(bucket, path, raises):
     if raises:
