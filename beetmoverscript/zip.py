@@ -201,4 +201,4 @@ def _ensure_no_file_got_overwritten(task_id, extracted_files):
             'Archives from task "{}" overwrote files: {}'.format(task_id, duplicated_paths)
         )
 
-    log.info('All archives from task "{}" outputed different files.')
+    log.info('All archives from task "{}" outputed different files.'.format(task_id))

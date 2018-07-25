@@ -118,9 +118,9 @@ async def test_push_to_maven(context, mocker):
     })
     mocker.patch('beetmoverscript.zip.check_and_extract_zip_archives', new=lambda _, __, ___: {
         '/work_dir/cot/someTaskId/public/build/target.maven.zip': {
-            'geckoview-beta-x86-62.0b3.aar': '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar',  # noqa E501
-            'geckoview-beta-x86-62.0b3.aar.md5': '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.md5',  # noqa E501
-            'geckoview-beta-x86-62.0b3.aar.sha1': '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.sha1',    # noqa E501
+            'org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar': '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar',  # noqa E501
+            'org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.md5': '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.md5',  # noqa E501
+            'org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.sha1': '/work_dir/cot/someTaskId/public/build/target.maven.zip.out/org/mozilla/geckoview-beta-x86/62.0b3/geckoview-beta-x86-62.0b3.aar.sha1',    # noqa E501
         },
     })
 

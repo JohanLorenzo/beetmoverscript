@@ -184,7 +184,10 @@ async def push_to_maven(context):
     extracted_paths_per_relative_path = list(extracted_paths_per_archive.values())[0]
 
     context.artifacts_to_beetmove = {
-        'en-US': extracted_paths_per_relative_path
+        'en-US': {
+            os.path.basename(path_in_archive): full_path
+            for path_in_archive, full_path in extracted_paths_per_relative_path.items()
+        }
     }
 
     await move_beets(context, context.artifacts_to_beetmove, mapping_manifest)
