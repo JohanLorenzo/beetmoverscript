@@ -183,8 +183,10 @@ def _generate_beetmover_template_args_maven(task, release_props):
 
     if 'nightly' in tmpl_args['artifact_id']:
         # Change version number to major.minor.buildId
-        tmpl_args['version'] = tmpl_args['version'].rstrip('a1')
-        tmpl_args['version'] = '{}.{}'.format(tmpl_args['version'], tmpl_args['buildid'])
+        # TODO Use mozilla-version to get major and minor number
+        version = tmpl_args['version'].split('b')[0]
+        version = version.split('a')[0]
+        tmpl_args['version'] = '{}.{}'.format(version, tmpl_args['buildid'])
 
     return tmpl_args
 
