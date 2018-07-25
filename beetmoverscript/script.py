@@ -170,12 +170,21 @@ async def push_to_maven(context):
         context.artifacts_to_beetmove, mapping_manifest
     )
 
+    extracted_paths_per_archive = zip.check_and_extract_zip_archives(
+        context.artifacts_to_beetmove,
+        expected_files,
+        context.config.get('zip_extract_max_file_size_in_mb', ZIP_MAX_FILE_SIZE_IN_MB)
+    )
+
+    number_of_extracted_archives = len(extracted_paths_per_archive)
+    if number_of_extracted_archives == 0:
+        raise ScriptWorkerTaskException('No archive extracted')
+    elif number_of_extracted_archives > 1:
+        raise NotImplementedError('More than 1 archive extracted. Only 1 is supported at once')
+    extracted_paths_per_relative_path = list(extracted_paths_per_archive.values())[0]
+
     context.artifacts_to_beetmove = {
-        'en-US': zip.check_and_extract_zip_archives(
-            context.artifacts_to_beetmove,
-            expected_files,
-            context.config.get('zip_extract_max_file_size_in_mb', ZIP_MAX_FILE_SIZE_IN_MB)
-        )
+        'en-US': extracted_paths_per_relative_path
     }
 
     await move_beets(context, context.artifacts_to_beetmove, mapping_manifest)

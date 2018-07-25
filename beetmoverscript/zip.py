@@ -10,19 +10,17 @@ log = logging.getLogger(__name__)
 
 
 def check_and_extract_zip_archives(artifacts_per_task_id, expected_files_per_archive_per_task_id, zip_max_size_in_mb):
-    deflated_artifacts = []
+    deflated_artifacts = {}
 
     for task_id, task_artifacts_params in artifacts_per_task_id.items():
         for artifacts_param in task_artifacts_params:
-            paths_for_task = artifacts_param['paths']
-
             if artifacts_param['zip_extract'] is False:
-                log.debug('Skipping artifacts marked as not `zipExtract`able: {}'.format(paths_for_task))
-                deflated_artifacts.extend(paths_for_task)
+                log.debug('Skipping artifacts marked as not `zipExtract`able: {}'.format(artifacts_param['paths']))
                 continue
 
             expected_files_per_archive = expected_files_per_archive_per_task_id[task_id]
-            deflated_artifacts.extend(_check_and_extract_zip_archives_for_given_task(
+            # No need to key deflated_artifacts by task_id. task_id is already in the full path of the archive
+            deflated_artifacts.update(_check_and_extract_zip_archives_for_given_task(
                 task_id, expected_files_per_archive, zip_max_size_in_mb
             ))
 
@@ -30,12 +28,12 @@ def check_and_extract_zip_archives(artifacts_per_task_id, expected_files_per_arc
 
 
 def _check_and_extract_zip_archives_for_given_task(task_id, expected_files_per_archive, zip_max_size_in_mb):
-    extracted_files = []
+    extracted_files = {}
 
     for archive_path, expected_files in expected_files_per_archive.items():
         log.info('Processing archive "{}" which marked as `zipExtract`able'.format(archive_path))
-        extracted_files.extend(
-            _check_extract_and_delete_zip_archive(archive_path, expected_files, zip_max_size_in_mb)
+        extracted_files[archive_path] = _check_extract_and_delete_zip_archive(
+            archive_path, expected_files, zip_max_size_in_mb
         )
 
     # We make this check at this stage (and not when all files from all tasks got extracted)
@@ -165,16 +163,17 @@ def _extract_and_check_output_files(zip_file, expected_files_in_archive):
         )
 
     extract_to = '{}.out'.format(zip_path)
-    expected_full_paths = [
-        os.path.join(extract_to, path_in_archive) for path_in_archive in expected_files_in_archive
-    ]
+    expected_full_paths_per_relative_path = {
+        path_in_archive: os.path.join(extract_to, path_in_archive)
+        for path_in_archive in expected_files_in_archive
+    }
     log.info('Extracting archive "{}" to "{}"...'.format(zip_path, extract_to))
     zip_file.extractall(extract_to)
     log.info('Extracted archive "{}". Verfiying extracted data...'.format(zip_path, extract_to))
 
-    _ensure_all_expected_files_are_deflated_on_disk(zip_path, expected_full_paths)
+    _ensure_all_expected_files_are_deflated_on_disk(zip_path, expected_full_paths_per_relative_path.values())
 
-    return expected_full_paths
+    return expected_full_paths_per_relative_path
 
 
 def _ensure_all_expected_files_are_deflated_on_disk(zip_path, expected_full_paths):

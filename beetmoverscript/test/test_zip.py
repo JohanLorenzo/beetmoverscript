@@ -90,17 +90,20 @@ def test_check_and_extract_zip_archives():
             artifacts_per_task_id, expected_files_per_archive_per_task_id, zip_max_size_in_mb=100
         )
 
-        assert sorted(files_once_extracted) == sorted([
-            '/a/non/archive',
-            '/another/non/archive',
-            os.path.join(d, 'firstTaskId-archive1.zip.out', 'some_file1'),
-            os.path.join(d, 'firstTaskId-archive1.zip.out', 'some', 'subfolder', 'file1'),
-            os.path.join(d, 'firstTaskId-archive2.zip.out', 'some_file2'),
-            os.path.join(d, 'firstTaskId-archive2.zip.out', 'some', 'subfolder', 'file2'),
-            '/just/another/regular/file',
-            os.path.join(d, 'thirdTaskId-archive1.zip.out', 'some_file3'),
-            os.path.join(d, 'thirdTaskId-archive1.zip.out', 'some', 'subfolder', 'file3'),
-        ])
+        assert files_once_extracted == {
+            os.path.join(d, 'firstTaskId-archive1.zip'): {
+                'some_file1': os.path.join(d, 'firstTaskId-archive1.zip.out', 'some_file1'),
+                'some/subfolder/file1': os.path.join(d, 'firstTaskId-archive1.zip.out', 'some', 'subfolder', 'file1'),
+            },
+            os.path.join(d, 'firstTaskId-archive2.zip'): {
+                'some_file2': os.path.join(d, 'firstTaskId-archive2.zip.out', 'some_file2'),
+                'some/subfolder/file2': os.path.join(d, 'firstTaskId-archive2.zip.out', 'some', 'subfolder', 'file2'),
+            },
+            os.path.join(d, 'thirdTaskId-archive1.zip'): {
+                'some_file3': os.path.join(d, 'thirdTaskId-archive1.zip.out', 'some_file3'),
+                'some/subfolder/file3': os.path.join(d, 'thirdTaskId-archive1.zip.out', 'some', 'subfolder', 'file3'),
+            },
+        }
 
 
 def test_check_and_extract_zip_archives_for_given_task():
@@ -126,12 +129,16 @@ def test_check_and_extract_zip_archives_for_given_task():
             'someTaskId', expected_files_per_archive, zip_max_size_in_mb=100
         )
 
-        assert sorted(extracted_files) == sorted([
-            os.path.join(d, 'archive1.zip.out', 'some_file1'),
-            os.path.join(d, 'archive1.zip.out', 'some', 'subfolder', 'file1'),
-            os.path.join(d, 'archive2.zip.out', 'some_file2'),
-            os.path.join(d, 'archive2.zip.out', 'some', 'subfolder', 'file2'),
-        ])
+        assert extracted_files == {
+            os.path.join(d, 'archive1.zip'): {
+                'some_file1': os.path.join(d, 'archive1.zip.out', 'some_file1'),
+                'some/subfolder/file1': os.path.join(d, 'archive1.zip.out', 'some', 'subfolder', 'file1'),
+            },
+            os.path.join(d, 'archive2.zip'): {
+                'some_file2': os.path.join(d, 'archive2.zip.out', 'some_file2'),
+                'some/subfolder/file2': os.path.join(d, 'archive2.zip.out', 'some', 'subfolder', 'file2'),
+            },
+        }
 
 
 def test_check_extract_and_delete_zip_archive():
@@ -145,11 +152,11 @@ def test_check_extract_and_delete_zip_archive():
         extracted_files = _check_extract_and_delete_zip_archive(
             archive_path, files_and_content.keys(), zip_max_size_in_mb=100
         )
-        assert extracted_files == [
-            os.path.join(d, 'some_archive.zip.out', 'some_file'),
-            os.path.join(d, 'some_archive.zip.out', 'some/subfolder/file'),
-        ]
-        for file in extracted_files:
+        assert extracted_files == {
+            'some_file': os.path.join(d, 'some_archive.zip.out', 'some_file'),
+            'some/subfolder/file': os.path.join(d, 'some_archive.zip.out', 'some/subfolder/file'),
+        }
+        for file in extracted_files.values():
             assert os.path.exists(file)
             assert os.path.isfile(file)
             key = [f for f in files_and_content.keys() if file.endswith(f)][0]
@@ -332,7 +339,10 @@ def test_extract_and_check_output_files():
 
         extracted_file1 = os.path.join(d, 'some.zip.out', 'some_file')
         extracted_file2 = os.path.join(d, 'some.zip.out', 'some', 'subfolder', 'file')
-        expected_extracted_files = [extracted_file1, extracted_file2]
+        expected_extracted_files = {
+            'some_file': extracted_file1,
+            'some/subfolder/file': extracted_file2,
+        }
 
         with zipfile.ZipFile(zip_path, mode='r') as zip_file:
             assert _extract_and_check_output_files(
