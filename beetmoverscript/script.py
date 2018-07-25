@@ -162,6 +162,7 @@ async def push_to_maven(context):
     context.artifacts_to_beetmove = task.get_upstream_artifacts_with_zip_extract_param(context)
     context.release_props = get_release_props(context)
     context.checksums = dict()  # Needed by downstream calls
+    context.raw_balrog_manifest = dict()    # Needed by downstream calls
 
     mapping_manifest = generate_beetmover_manifest(context)
     validate_bucket_paths(context.bucket, mapping_manifest['s3_bucket_path'])
