@@ -17,7 +17,7 @@ from scriptworker import client
 from scriptworker.exceptions import ScriptWorkerTaskException, ScriptWorkerRetryException
 from scriptworker.utils import retry_async, raise_future_exceptions
 
-from beetmoverscript import task, zip
+from beetmoverscript import task, zip, maven
 
 from beetmoverscript.constants import (
     MIME_MAP, RELEASE_BRANCHES, CACHE_CONTROL_MAXAGE, RELEASE_EXCLUDE,
@@ -25,7 +25,6 @@ from beetmoverscript.constants import (
     PARTNER_REPACK_PRIVATE_REGEXES, PARTNER_REPACK_PUBLIC_REGEXES, BUILDHUB_ARTIFACT,
     INSTALLER_ARTIFACTS, ZIP_MAX_FILE_SIZE_IN_MB
 )
-from beetmoverscript.maven import get_maven_expected_files_per_archive_per_task_id
 from beetmoverscript.task import (
     validate_task_schema, add_balrog_manifest_to_artifacts,
     get_upstream_artifacts, get_release_props,
@@ -167,7 +166,7 @@ async def push_to_maven(context):
     mapping_manifest = generate_beetmover_manifest(context)
     validate_bucket_paths(context.bucket, mapping_manifest['s3_bucket_path'])
 
-    expected_files = get_maven_expected_files_per_archive_per_task_id(
+    expected_files = maven.get_maven_expected_files_per_archive_per_task_id(
         context.artifacts_to_beetmove, mapping_manifest
     )
 
