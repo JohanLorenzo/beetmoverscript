@@ -140,8 +140,8 @@ def _ensure_all_expected_files_are_present_in_archive(zip_path, files_in_archive
             )
         if file not in unique_expected_files:
             raise TaskVerificationError(
-                'File "{}" present in archive "{}" is not expected.'.format(
-                    file, zip_path
+                'File "{}" present in archive "{}" is not expected. Expected: {}'.format(
+                    file, zip_path, unique_expected_files
                 )
             )
 
