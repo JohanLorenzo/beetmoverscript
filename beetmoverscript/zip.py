@@ -24,6 +24,8 @@ def check_and_extract_zip_archives(artifacts_per_task_id, expected_files_per_arc
                 task_id, expected_files_per_archive, zip_max_size_in_mb
             ))
 
+    log.info('Extracted these files: {}'.format(deflated_artifacts))
+
     return deflated_artifacts
 
 
