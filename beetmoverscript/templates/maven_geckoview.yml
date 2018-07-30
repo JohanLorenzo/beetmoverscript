@@ -9,7 +9,7 @@ s3_bucket_path: maven2/org/mozilla/{{ artifact_id }}/{{ version }}/  # Maven gro
 mapping:
 {% for locale in ['en-US'] %}
   "{{ locale }}":   # Locale is not needed for geckoview, it's used by move_beets, though
-{% for product in ['geckoview'] %}
+  {% for product in ['geckoview'] %}
     "{{ artifact_id }}-{{ version }}.aar":
       s3_key: {{ artifact_id }}-{{ version }}.aar
       destinations:
@@ -58,5 +58,5 @@ mapping:
       s3_key: {{ artifact_id }}-{{ version }}-sources.jar.sha1
       destinations:
         - {{ artifact_id }}-{{ version }}-sources.jar.sha1
-{% endfor %}
+  {% endfor %}
 {% endfor %}
