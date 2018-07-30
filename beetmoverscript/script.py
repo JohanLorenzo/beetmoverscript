@@ -23,7 +23,7 @@ from beetmoverscript.constants import (
     MIME_MAP, RELEASE_BRANCHES, CACHE_CONTROL_MAXAGE, RELEASE_EXCLUDE,
     NORMALIZED_BALROG_PLATFORMS, PARTNER_REPACK_PUBLIC_PREFIX_TMPL,
     PARTNER_REPACK_PRIVATE_REGEXES, PARTNER_REPACK_PUBLIC_REGEXES, BUILDHUB_ARTIFACT,
-    INSTALLER_ARTIFACTS, ZIP_MAX_FILE_SIZE_IN_MB
+    INSTALLER_ARTIFACTS, DEFAULT_ZIP_MAX_FILE_SIZE_IN_MB
 )
 from beetmoverscript.task import (
     validate_task_schema, add_balrog_manifest_to_artifacts,
@@ -173,7 +173,7 @@ async def push_to_maven(context):
     extracted_paths_per_archive = zip.check_and_extract_zip_archives(
         context.artifacts_to_beetmove,
         expected_files,
-        context.config.get('zip_extract_max_file_size_in_mb', ZIP_MAX_FILE_SIZE_IN_MB)
+        context.config.get('zip_max_file_size_in_mb', DEFAULT_ZIP_MAX_FILE_SIZE_IN_MB)
     )
 
     number_of_extracted_archives = len(extracted_paths_per_archive)

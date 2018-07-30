@@ -178,5 +178,5 @@ INSTALLER_ARTIFACTS = (
 # Zip archive can theoretically have a better compression ratio, like when there's a big amount
 # of redundancy (e.g.: files full of zeros). Let beetmover only deal with regular cases. Edge cases
 # are considered too suspicious, so we bail out on them.
-ZIP_MAX_FILE_SIZE_IN_MB = 100
+DEFAULT_ZIP_MAX_FILE_SIZE_IN_MB = 100
 ZIP_MAX_COMPRESSION_RATIO = 10
