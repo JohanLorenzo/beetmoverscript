@@ -167,21 +167,21 @@ def _ensure_all_expected_files_are_present_in_archive(zip_path, files_in_archive
             'Found duplicated expected files in archive "{}": {}'.format(zip_path, duplicated_files)
         )
 
-    for file in files_in_archive:
-        if os.path.isabs(file):
+    for file_ in files_in_archive:
+        if os.path.isabs(file_):
             raise TaskVerificationError(
-                'File "{}" in archive "{}" cannot be an absolute one.'.format(file, zip_path)
+                'File "{}" in archive "{}" cannot be an absolute one.'.format(file_, zip_path)
             )
-        if os.path.normpath(file) != file:
+        if os.path.normpath(file_) != file_:
             raise TaskVerificationError(
                 'File "{}" in archive "{}" cannot contain up-level reference nor redundant separators'.format(
-                    file, zip_path
+                    file_, zip_path
                 )
             )
-        if file not in unique_expected_files:
+        if file_ not in unique_expected_files:
             raise TaskVerificationError(
                 'File "{}" present in archive "{}" is not expected. Expected: {}'.format(
-                    file, zip_path, unique_expected_files
+                    file_, zip_path, unique_expected_files
                 )
             )
 
