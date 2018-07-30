@@ -10,6 +10,43 @@ log = logging.getLogger(__name__)
 
 
 def check_and_extract_zip_archives(artifacts_per_task_id, expected_files_per_archive_per_task_id, zip_max_size_in_mb):
+    """Verify zip archives and extract them.
+
+    This function enhances the checks done in python's zipfile. Each of the zip file passed is
+    checked before attempting any extraction. The archives themselves are ensure to be not too big
+    (less than `zip_max_size_in_mb`) and to be actual zip files. Then, the content is verified.
+    Each file within an archive must not be too big (less than `zip_max_size_in_mb`) and must not
+    have a too high compression ratio (less than `ZIP_MAX_COMPRESSION_RATIO`). File names are
+    ensure to be relative paths (no full paths allowed) and to not contain any up references (`..`).
+    Then, the file list is matched against the expected one (given in
+    `expected_files_per_archive_per_task_id`). No file must be missing. None must be found extra.
+    If any of these condition is not met, then the function raises an exception, without attempting
+    to extract the files.
+
+    Otherwise, files are extracted in the same folder as the zip archive, under the subfolder
+    named after the archive name: `x.out` x being the name of the archive including the extension.
+    Finally, all expected files are checked to exist on disk, to ensure none got overwritten.
+
+    Args:
+        artifacts_per_task_id (dict): a dictionary keyed by taskId. Value is a list of dictionaries
+        matching the schema `{'paths': list(str), 'zip_extract': bool}`. Any path with `zip_extract`
+        being false will be ignored and not returned in the list of deflated artifacts.
+
+        expected_files_per_archive_per_task_id (dict): a dictionary keyed by taskId. Value is
+        another dictionary keyed by the full path of the archive. Value is then a list of relative
+        paths of expected files in the archive
+
+        zip_max_size_in_mb (int): if an archive or a file within the archive is bigger than this
+        value, then the archive is considered invalid.
+
+    Raises:
+        TaskVerificationError: whenever an archive breaks one of the rules stated above
+
+    Returns:
+        dict: A dictionary keyed by the full path of the archive. Value is another dictionary keyed
+        by relative path of files in the archve. Value is the full path of the extracted file.
+    """
+
     deflated_artifacts = {}
 
     for task_id, task_artifacts_params in artifacts_per_task_id.items():

@@ -78,11 +78,11 @@ def test_check_and_extract_zip_archives():
 
         expected_files_per_archive_per_task_id = {
             'firstTaskId': {
-                first_task_id_archive1_path: first_task_id_archive1_files_and_content,
-                first_task_id_archive2_path: first_task_id_archive2_files_and_content,
+                first_task_id_archive1_path: list(first_task_id_archive1_files_and_content.keys()),
+                first_task_id_archive2_path: list(first_task_id_archive2_files_and_content.keys()),
             },
             'thirdTaskId': {
-                third_task_id_archive1_path: third_task_id_archive1_files_and_content,
+                third_task_id_archive1_path: list(third_task_id_archive1_files_and_content.keys()),
             },
         }
 
