@@ -88,13 +88,14 @@ def _check_extract_and_delete_zip_archive(zip_path, expected_files, zip_max_size
 
     with zipfile.ZipFile(zip_path) as zip_file:
         zip_metadata = _fetch_zip_metadata(zip_file)
+        files_in_archive = list(zip_metadata.keys())
 
         # we don't close the file descriptor here to avoid the tested file to be swapped by a rogue one
         _ensure_files_in_archive_have_decent_sizes(zip_path, zip_metadata, zip_max_size_in_mb)
-        _ensure_all_expected_files_are_present_in_archive(zip_path, zip_metadata, expected_files)
+        _ensure_all_expected_files_are_present_in_archive(zip_path, files_in_archive, expected_files)
         log.info('Content of archive "{}" is sane'.format(zip_path))
 
-        extracted_files = _extract_and_check_output_files(zip_file, zip_metadata.keys())
+        extracted_files = _extract_and_check_output_files(zip_file, files_in_archive)
 
     # We remove the zip archive because it's not used anymore. We just need the deflated files
     os.remove(zip_path)
