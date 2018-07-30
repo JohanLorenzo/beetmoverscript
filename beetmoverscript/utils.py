@@ -82,8 +82,8 @@ def is_partner_action(action):
 
 
 def is_maven_action(action):
-    """Function to return boolean if we're promoting a release as opposed to a
-    nightly or something else. Does that by checking the action type.
+    """Function to return boolean if the task intends to upload onto maven.
+    Geckoview uploads to maven, for instance. Does that by checking the action type.
     """
     return action in MAVEN_ACTIONS
 
