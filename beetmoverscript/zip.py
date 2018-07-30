@@ -77,7 +77,7 @@ def _check_and_extract_zip_archives_for_given_task(task_id, expected_files_per_a
 
     # We make this check at this stage (and not when all files from all tasks got extracted)
     # because files from different tasks are stored in different folders by scriptworker. Moreover
-    # we tested no relative paths like ".." are not used within the archive.
+    # we tested no relative paths like ".." were used within the archive.
     _ensure_no_file_got_overwritten(task_id, extracted_files)
 
     return extracted_files
