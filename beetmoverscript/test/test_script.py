@@ -118,7 +118,7 @@ async def test_push_to_maven(context, mocker, extract_zip_output, ErrorRaised):
     mocker.patch('beetmoverscript.utils.JINJA_ENV', get_test_jinja_env())
     context.task['payload']['upstreamArtifacts'] = []
     mocker.patch('beetmoverscript.task.get_upstream_artifacts_with_zip_extract_param', new=lambda _: None)
-    mocker.patch('beetmoverscript.maven.get_maven_expected_files_per_archive_per_task_id', new=lambda _, __: ('', {}))
+    mocker.patch('beetmoverscript.maven_utils.get_maven_expected_files_per_archive_per_task_id', new=lambda _, __: ('', {}))
     mocker.patch('beetmoverscript.zip.check_and_extract_zip_archives', new=lambda _, __, ___: extract_zip_output)
 
     if ErrorRaised is None:

@@ -1,6 +1,6 @@
 import pytest
 
-from beetmoverscript.maven import get_maven_expected_files_per_archive_per_task_id
+from beetmoverscript.maven_utils import get_maven_expected_files_per_archive_per_task_id
 
 
 @pytest.mark.parametrize('upstream_artifacts_per_task_id, mapping_manifest, expected, raises', ((
