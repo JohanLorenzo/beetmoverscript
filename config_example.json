@@ -58,5 +58,5 @@
         }
     },
 
-    "zip_extract_max_file_size_in_mb": 100, 
+    "zip_max_file_size_in_mb": 100,
 }
