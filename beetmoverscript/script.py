@@ -158,7 +158,7 @@ async def push_to_releases(context):
 
 async def push_to_maven(context):
     """Push artifacts to locations expected by maven clients (like mvn or gradle)"""
-    context.artifacts_to_beetmove = task.get_upstream_artifacts_with_zip_extract_param(context)
+    artifacts_to_beetmove = task.get_upstream_artifacts_with_zip_extract_param(context)
     context.release_props = get_release_props(context)
     context.checksums = dict()  # Needed by downstream calls
     context.raw_balrog_manifest = dict()    # Needed by downstream calls
@@ -166,14 +166,22 @@ async def push_to_maven(context):
     mapping_manifest = generate_beetmover_manifest(context)
     validate_bucket_paths(context.bucket, mapping_manifest['s3_bucket_path'])
 
+    context.artifacts_to_beetmove = _extract_and_check_maven_artifacts_to_beetmove(
+        artifacts_to_beetmove,
+        mapping_manifest,
+        context.config.get('zip_max_file_size_in_mb', DEFAULT_ZIP_MAX_FILE_SIZE_IN_MB)
+    )
+
+    await move_beets(context, context.artifacts_to_beetmove, mapping_manifest)
+
+
+def _extract_and_check_maven_artifacts_to_beetmove(artifacts, mapping_manifest, zip_max_file_size_in_mb):
     expected_files = maven_utils.get_maven_expected_files_per_archive_per_task_id(
-        context.artifacts_to_beetmove, mapping_manifest
+        artifacts, mapping_manifest
     )
 
     extracted_paths_per_archive = zip.check_and_extract_zip_archives(
-        context.artifacts_to_beetmove,
-        expected_files,
-        context.config.get('zip_max_file_size_in_mb', DEFAULT_ZIP_MAX_FILE_SIZE_IN_MB)
+        artifacts, expected_files, zip_max_file_size_in_mb
     )
 
     number_of_extracted_archives = len(extracted_paths_per_archive)
@@ -183,14 +191,12 @@ async def push_to_maven(context):
         raise NotImplementedError('More than 1 archive extracted. Only 1 is supported at once')
     extracted_paths_per_relative_path = list(extracted_paths_per_archive.values())[0]
 
-    context.artifacts_to_beetmove = {
+    return {
         'en-US': {
             os.path.basename(path_in_archive): full_path
             for path_in_archive, full_path in extracted_paths_per_relative_path.items()
         }
     }
-
-    await move_beets(context, context.artifacts_to_beetmove, mapping_manifest)
 
 
 # copy_beets {{{1
